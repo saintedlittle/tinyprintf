@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "tinyprintf.h"
 
+#include <stdlib.h> // For getenv
 
 /*
  * Configuration
@@ -34,6 +35,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Enable %z (size_t) support */
 #define PRINTF_SIZE_T_SUPPORT
+
+// Default to comma if no environment variable is set
+#ifndef TINYPRINTF_GROUP_SEPARATOR
+#define TINYPRINTF_GROUP_SEPARATOR ','
+#endif
 
 /*
  * Configuration adjustments
@@ -97,6 +103,11 @@ static void _TFP_GCC_NO_INLINE_ ulli2a(
         if (n || dgt > 0 || d == 0) {
             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
             ++n;
+
+            // Add comma if appropriate (only for base 10)
+            if (p->base == 10 && n > 0 && (n % 3) == 0) {
+                *bf++ = TINYPRINTF_GROUP_SEPARATOR;
+            }
         }
     }
     *bf = 0;
@@ -127,6 +138,11 @@ static void uli2a(unsigned long int num, struct param *p)
         if (n || dgt > 0 || d == 0) {
             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
             ++n;
+
+            // Add comma if appropriate (only for base 10)
+            if (p->base == 10 && n > 0 && (n % 3) == 0) {
+                *bf++ = TINYPRINTF_GROUP_SEPARATOR;
+            }
         }
     }
     *bf = 0;
@@ -158,6 +174,11 @@ static void ui2a(unsigned int num, struct param *p) {
         if (likely(n || dgt > 0 || d == 0)) {
             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
             ++n;
+
+            // Add comma if appropriate (only for base 10)
+            if (p->base == 10 && n > 0 && (n % 3) == 0) {
+                *bf++ = TINYPRINTF_GROUP_SEPARATOR;
+            }
         }
     }
     *bf = 0;
@@ -344,6 +365,8 @@ void tfp_format(void *putp, putcf putf, const char *fmt, va_list va) {
                     case '-': p.align_left = 1; continue;
                     case '0': p.lz = 1; continue;
                     case '#': p.alt = 1; continue;
+                    case '\'':  // Treat ' as a flag, but don't add commas for now
+                        break;
                     default: break;
                 }
                 break;
